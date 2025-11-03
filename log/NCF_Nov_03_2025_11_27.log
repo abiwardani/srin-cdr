@@ -1,0 +1,31 @@
+Data Info:
+Source Name: amazon-custom-books
+Target Name: amazon-custom-movies-tv
+Number of Users: 3859
+Number of Source Items: 4883
+Number of Target Items: 4929
+
+Number of Source Interactions: 104080
+Number of Target Interactions: 120985
+
+Model Info:
+model_type: NCF
+n_users: 3859
+user_embedding_dim: 64
+source_feat_dim: 96
+target_feat_dim: 96
+source_mlp_layers: [128, 64, 32, 1]
+target_mlp_layers: [128, 64, 32, 1]
+
+Trainer Info:
+epochs: 50
+learning_rate: 0.001
+weight_decay: 1e-05
+
+Training Metrics:
+acc: 0.9593585981733272
+precision: 0.9789866618108982
+recall: 0.9763111062686134
+f1: 0.9776470534752308
+rmse_source: 0.5092069851853867
+rmse_target: 0.5658835782650092

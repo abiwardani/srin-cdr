@@ -1,0 +1,29 @@
+Data Info:
+Source Name: amazon-custom-books
+Target Name: amazon-custom-movies-tv
+Number of Users: 3859
+Number of Source Items: 4883
+Number of Target Items: 4929
+
+Number of Source Interactions: 104080
+Number of Target Interactions: 120985
+
+Model Info:
+model_type: CMF
+n_users: 3859
+n_items_source: 4883
+n_items_target: 4929
+embedding_dim: 64
+
+Trainer Info:
+epochs: 2
+learning_rate: 0.001
+weight_decay: 1e-05
+
+Training Metrics:
+acc: 0.16001157168243998
+precision: 0.9583153813011633
+recall: 0.08078194232585167
+f1: 0.1490035169988277
+rmse_source: 3.9913160011983044
+rmse_target: 2.8722752765304174
