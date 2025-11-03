@@ -29,14 +29,9 @@ if __name__ == "__main__":
         default=1e-3,
     )
     parser.add_argument(
-        "--alpha",
-        type=float,
-        default=0.2,
-    )
-    parser.add_argument(
         "--batch-size",
         type=int,
-        default=1024,
+        default=256,
     )
     parser.add_argument(
         "--layers",
@@ -88,15 +83,23 @@ if __name__ == "__main__":
     n_source_items = data_lib["n_source_items"]
     n_target_items = data_lib["n_target_items"]
     n_items = data_lib["n_items"]
+
     source_interactions = data_lib["source_interactions"]
     target_interactions = data_lib["target_interactions"]
+
     train_source_interactions = data_lib["train_source_interactions"]
+    valid_source_interactions = data_lib["valid_source_interactions"]
     test_source_interactions = data_lib["test_source_interactions"]
+
     train_target_interactions = data_lib["train_target_interactions"]
+    valid_target_interactions = data_lib["valid_target_interactions"]
     test_target_interactions = data_lib["test_target_interactions"]
 
     train_source_loader = DataLoader(train_source_interactions, batch_size=args.batch_size, shuffle=True)
     train_target_loader = DataLoader(train_target_interactions, batch_size=args.batch_size, shuffle=True)
+    valid_source_loader = DataLoader(valid_source_interactions, batch_size=len(valid_source_interactions), shuffle=False) # no shuffle
+    valid_target_loader = DataLoader(valid_target_interactions, batch_size=len(valid_target_interactions), shuffle=False)
+
     test_source_loader = DataLoader(test_source_interactions, batch_size=args.batch_size, shuffle=False)
     test_target_loader = DataLoader(test_target_interactions, batch_size=args.batch_size, shuffle=False)
 
@@ -138,9 +141,10 @@ if __name__ == "__main__":
     trainer.train(
         train_source_loader,
         train_target_loader,
+        valid_source_loader,
+        valid_target_loader,
         epochs=args.epochs,
         lr=args.lr,
-        alpha=args.alpha,
         weight_decay=1e-5,
         report_every=1,
     )
@@ -149,7 +153,9 @@ if __name__ == "__main__":
     test_target_dataset = Subset(target_interactions, test_target_loader.dataset.indices).dataset.tensors
 
     target_loss = trainer.evaluate(test_target_loader)
-    target_metrics = trainer.calculate_metrics(test_target_dataset)
+    target_metrics = trainer.calculate_metrics(test_target_dataset[0],   # target users
+                                              test_target_dataset[1],   # target items
+                                              test_target_dataset[2])   # target ratings
 
     target_metrics[f"{model_loss_type}"] = target_loss
     

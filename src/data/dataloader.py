@@ -11,7 +11,7 @@ def get_interaction_data(source_inter_path, target_inter_path):
 
     return source_dataset, target_dataset
 
-def build_data_lib(source_dataset, target_dataset, train_test_split=[0.8, 0.2]):
+def build_data_lib(source_dataset, target_dataset, train_test_split=[0.7, 0.1, 0.2]):
     source_users = list(set([row[0] for row in source_dataset]))
     source_items = list(set([row[1] for row in source_dataset]))
 
@@ -46,8 +46,8 @@ def build_data_lib(source_dataset, target_dataset, train_test_split=[0.8, 0.2]):
     source_dataset_torch = TensorDataset(tensor_source_users, tensor_source_items, tensor_source_ratings, tensor_source_clicks)
     target_dataset_torch = TensorDataset(tensor_target_users, tensor_target_items, tensor_target_ratings, tensor_target_clicks)
 
-    source_train_dataset, source_test_dataset = torch.utils.data.random_split(source_dataset_torch, train_test_split)
-    target_train_dataset, target_test_dataset = torch.utils.data.random_split(target_dataset_torch, train_test_split)
+    source_train_dataset, source_valid_dataset, source_test_dataset = torch.utils.data.random_split(source_dataset_torch, train_test_split)
+    target_train_dataset, target_valid_dataset, target_test_dataset = torch.utils.data.random_split(target_dataset_torch, train_test_split)
 
     data_lib = {
         "n_users": n_users,
@@ -64,8 +64,11 @@ def build_data_lib(source_dataset, target_dataset, train_test_split=[0.8, 0.2]):
         "target_interactions": target_dataset_torch,
 
         "train_source_interactions": source_train_dataset,
-        "test_source_interactions": source_test_dataset,    
+        "valid_source_interactions": source_valid_dataset,
+        "test_source_interactions": source_test_dataset,
+        
         "train_target_interactions": target_train_dataset,
+        "valid_target_interactions": target_valid_dataset,
         "test_target_interactions": target_test_dataset,
     }
 

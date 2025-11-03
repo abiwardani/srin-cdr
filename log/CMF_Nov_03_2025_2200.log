@@ -1,0 +1,56 @@
+Data Info:
+Source Name: amazon-custom-books
+Target Name: amazon-custom-movies-tv
+Number of Users: 3859
+Number of Source Items: 4883
+Number of Target Items: 4929
+
+Number of Source Interactions: 104080
+Number of Target Interactions: 120985
+
+Model Info:
+model_type: CMF
+loss_type: MSE
+n_users: 3859
+n_items: 9812
+embedding_dim: 64
+
+Trainer Info:
+epochs: 2
+learning_rate: 0.001
+weight_decay: 1e-05
+
+Testing Metrics:
+acc: 0.122114311691532
+precision: 0.9664844307107202
+recall: 0.03691799230042856
+f1: 0.07111935142509818
+MSE: 3.1624383401743748
+
+
+
+Training Scores per Epoch:
+Epoch 1:
+  Loss: 9.671880
+  Source Metrics:
+    acc: 0.0681206764027671
+    precision: 0.0
+    recall: 0.0
+    f1: 0.0
+  Target Metrics:
+    acc: 0.08612993883286493
+    precision: 0.0
+    recall: 0.0
+    f1: 0.0
+Epoch 2:
+  Loss: 7.913787
+  Source Metrics:
+    acc: 0.06888931591083781
+    precision: 0.9
+    recall: 0.0009279307145066501
+    f1: 0.0018539499433515292
+  Target Metrics:
+    acc: 0.11464704909902464
+    precision: 0.9575596816976127
+    recall: 0.03265195369030391
+    f1: 0.06315052916994665

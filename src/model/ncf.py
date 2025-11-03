@@ -1,6 +1,7 @@
-import math
+import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 # Neural collaborative filtering (NCF) for cross-domain recommendation
@@ -85,7 +86,7 @@ class NCF(nn.Module):
                 nn.init.xavier_uniform_(m.weight)
                 nn.init.zeros_(m.bias)
 
-    def forward(self, users: torch.LongTensor, items: torch.LongTensor, domain: str):
+    def predict(self, users: torch.LongTensor, items: torch.LongTensor, domain: str):
         """
         users: (batch,)
         items: (batch,) -- item indices local to domain (0..n_items_domain-1)
@@ -109,11 +110,8 @@ class NCF(nn.Module):
         
         return out
     
-    def calculate_loss(self, users: torch.LongTensor, items: torch.LongTensor, ratings: torch.FloatTensor, domain: str):
-        preds = self.forward(users, items, domain)
-        loss = self.loss(preds, ratings)
-
-        return loss
+    def forward(self, users: torch.LongTensor, items: torch.LongTensor, domain: str):
+        return self.predict(users, items, domain)
     
     def __str__(self):
         info = self.get_model_info()
@@ -123,14 +121,21 @@ class NCF(nn.Module):
 class NCFTrainer():
     def __init__(self, model: NCF):
         self.model = model
+    
+    def calculate_loss(self, users: torch.LongTensor, items: torch.LongTensor, ratings: torch.FloatTensor, domain: str):
+        preds = self.model.forward(users, items, domain)
+        loss = self.model.loss(preds, ratings)
+
+        return loss
 
     def train(
             self,
-            source_loader,
-            target_loader,
+            train_source_loader: DataLoader,
+            train_target_loader: DataLoader,
+            valid_source_loader: DataLoader,
+            valid_target_loader: DataLoader,
             epochs: int = 10,
             lr: float = 1e-3,
-            alpha: float = None,
             weight_decay: float = 0.0,
             report_every: int = 1,
         ):
@@ -138,9 +143,10 @@ class NCFTrainer():
         self.epochs = epochs
         self.learning_rate = lr
         self.weight_decay = weight_decay
+        self.scores = []
 
         opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-        loss_fn = nn.MSELoss()
+        criterion = model.loss
 
         for ep in range(1, epochs + 1):
             model.train()
@@ -149,12 +155,13 @@ class NCFTrainer():
             n_source_batches = 0
             n_target_batches = 0
 
-            for users, items, ratings, _ in source_loader:
+            for users, items, ratings, _ in train_source_loader:
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
 
-                loss = model.calculate_loss(users, items, ratings, domain="source")
+                preds = model(users, items, domain="source")
+                loss = criterion(preds, ratings)
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
@@ -162,12 +169,13 @@ class NCFTrainer():
                 total_source_loss += loss.item()
                 n_source_batches += 1
 
-            for users, items, ratings, _ in target_loader:
+            for users, items, ratings, _ in train_target_loader:
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
 
-                loss = model.calculate_loss(users, items, ratings, domain="target")
+                preds = model(users, items, domain="target")
+                loss = criterion(preds, ratings)
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
@@ -177,6 +185,26 @@ class NCFTrainer():
 
             if ep % report_every == 0:
                 print(f"Epoch {ep}/{epochs} source MSE: {total_source_loss / max(1, n_source_batches):.6f} | target MSE: {total_target_loss / max(1, n_target_batches):.6f}")
+
+                avg_loss = (total_source_loss + total_target_loss) / 2
+
+                # Validation step
+                if valid_source_loader is not None and valid_target_loader is not None:
+                    for users, items, ratings, _ in valid_source_loader:
+                        users = users.long()
+                        items = items.long()
+                        ratings = ratings.float()
+
+                        source_metrics = self.calculate_metrics(users, items, ratings)
+                    
+                    for users, items, ratings, _ in valid_target_loader:
+                        users = users.long()
+                        items = items.long()
+                        ratings = ratings.float()
+
+                        target_metrics = self.calculate_metrics(users, items, ratings)
+
+                    self.scores.append((avg_loss, source_metrics, target_metrics))
 
         return model
 
@@ -190,21 +218,17 @@ class NCFTrainer():
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
-                mse += model.calculate_loss(users, items, ratings, domain=domain).item() * ratings.numel()
+                mse += self.calculate_loss(users, items, ratings, domain=domain).item() * ratings.numel()
                 n += ratings.numel()
         return mse / max(1, n)
     
-    def calculate_metrics(self, eval_dataset):
-        target_users = eval_dataset[0]
-        target_items = eval_dataset[1]
-        ratings = eval_dataset[2].numpy()
+    def calculate_metrics(self, target_users, target_items, ratings, domain="target"):
+        y_preds = self.model.predict(target_users.long(), target_items.long(), 'target')
+        bin_preds = (y_preds.detach().numpy() >= 3).astype(np.int_)
+        clicks = (ratings.numpy() >= 3).astype(np.int_)
 
-        preds = self.model.forward(target_users.long(), target_items.long(), 'target')
-        bin_preds = preds.detach().numpy() >= 3
-        bin_ratings = ratings >= 3
-
-        acc = accuracy_score(bin_ratings, bin_preds)
-        conf = precision_recall_fscore_support(bin_ratings, bin_preds, average='binary')
+        acc = accuracy_score(clicks, bin_preds)
+        conf = precision_recall_fscore_support(clicks, bin_preds, average='binary', zero_division=0.0)
 
         return {"acc": acc, "precision": conf[0], "recall": conf[1], "f1": conf[2]}
 

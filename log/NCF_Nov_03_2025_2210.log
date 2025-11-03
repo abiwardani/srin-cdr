@@ -1,0 +1,275 @@
+Data Info:
+Source Name: amazon-custom-books
+Target Name: amazon-custom-movies-tv
+Number of Users: 3859
+Number of Source Items: 4883
+Number of Target Items: 4929
+
+Number of Source Interactions: 104080
+Number of Target Interactions: 120985
+
+Model Info:
+model_type: NCF
+loss_type: MSE
+n_users: 3859
+user_embedding_dim: 64
+source_feat_dim: 96
+target_feat_dim: 96
+source_mlp_layers: [128, 64, 32, 8, 1]
+target_mlp_layers: [128, 64, 32, 8, 1]
+
+Trainer Info:
+epochs: 20
+learning_rate: 0.001
+weight_decay: 1e-05
+
+Testing Metrics:
+acc: 0.9292226309046576
+precision: 0.9581592977834712
+recall: 0.9643622430449625
+f1: 0.9612507636264905
+MSE: 0.894859511307775
+
+
+
+Training Scores per Epoch:
+Epoch 1:
+  Loss: 1174.833048
+  Source Metrics:
+    acc: 0.6938893159108378
+    precision: 0.9417697686928456
+    recall: 0.7178146781467815
+    f1: 0.8146812470916704
+  Target Metrics:
+    acc: 0.7030914200694329
+    precision: 0.9217883418222976
+    recall: 0.7373472159348121
+    f1: 0.8193158953722333
+Epoch 2:
+  Loss: 696.805903
+  Source Metrics:
+    acc: 0.7176210607225212
+    precision: 0.9410014232112822
+    recall: 0.745489954899549
+    f1: 0.831913068344295
+  Target Metrics:
+    acc: 0.7324351132418582
+    precision: 0.9279763209822407
+    recall: 0.7664101403349932
+    f1: 0.839490256359399
+Epoch 3:
+  Loss: 628.760714
+  Source Metrics:
+    acc: 0.7429861644888547
+    precision: 0.9418445026831399
+    recall: 0.7735752357523575
+    f1: 0.8494569193539311
+  Target Metrics:
+    acc: 0.7428500578608035
+    precision: 0.9268345168926189
+    recall: 0.7799004074241739
+    f1: 0.8470426274644771
+Epoch 4:
+  Loss: 578.955601
+  Source Metrics:
+    acc: 0.7795926210607225
+    precision: 0.9407039924403496
+    recall: 0.8163181631816319
+    f1: 0.8741082208319614
+  Target Metrics:
+    acc: 0.7724417259051083
+    precision: 0.9264554618391277
+    recall: 0.815482118605704
+    f1: 0.8674339095680648
+Epoch 5:
+  Loss: 536.591323
+  Source Metrics:
+    acc: 0.7821867794004612
+    precision: 0.941933199575121
+    recall: 0.818060680606806
+    f1: 0.8756377201162983
+  Target Metrics:
+    acc: 0.7772359067614482
+    precision: 0.9299691040164778
+    recall: 0.8175645088275237
+    f1: 0.8701517706576728
+Epoch 6:
+  Loss: 495.079684
+  Source Metrics:
+    acc: 0.8084166026133743
+    precision: 0.9404221516114389
+    recall: 0.8494259942599426
+    f1: 0.8926109435588108
+  Target Metrics:
+    acc: 0.7934369317242519
+    precision: 0.9296199477176754
+    recall: 0.8371208691715708
+    f1: 0.8809489781334857
+Epoch 7:
+  Loss: 461.748332
+  Source Metrics:
+    acc: 0.8229246733282091
+    precision: 0.9408356545961003
+    recall: 0.8655186551865519
+    f1: 0.9016069617212109
+  Target Metrics:
+    acc: 0.8020333939494131
+    precision: 0.9286422200198216
+    recall: 0.8483476686283387
+    f1: 0.8866808611308256
+Epoch 8:
+  Loss: 429.335472
+  Source Metrics:
+    acc: 0.8273443504996156
+    precision: 0.940746483552996
+    recall: 0.8706437064370643
+    f1: 0.904338568006388
+  Target Metrics:
+    acc: 0.8096379566870557
+    precision: 0.9326009501187649
+    recall: 0.8531462200090538
+    f1: 0.8911059624568537
+Epoch 9:
+  Loss: 397.960153
+  Source Metrics:
+    acc: 0.8286894696387395
+    precision: 0.9388002201430931
+    recall: 0.8742312423124231
+    f1: 0.9053659572209544
+  Target Metrics:
+    acc: 0.8091420069432964
+    precision: 0.9314500197550375
+    recall: 0.8537799909461294
+    f1: 0.8909254097973451
+Epoch 10:
+  Loss: 365.969540
+  Source Metrics:
+    acc: 0.8354150653343582
+    precision: 0.9413895291405993
+    recall: 0.8791512915129152
+    f1: 0.909206551121005
+  Target Metrics:
+    acc: 0.8221193585716647
+    precision: 0.9301538163877334
+    recall: 0.8705296514259846
+    f1: 0.8993545973248527
+Epoch 11:
+  Loss: 340.331443
+  Source Metrics:
+    acc: 0.8595311299000769
+    precision: 0.9424882629107981
+    recall: 0.9053915539155392
+    f1: 0.9235675449602677
+  Target Metrics:
+    acc: 0.8515457100347165
+    precision: 0.934756040236909
+    recall: 0.9002263467632413
+    f1: 0.91716631307075
+Epoch 12:
+  Loss: 314.682234
+  Source Metrics:
+    acc: 0.8711568024596464
+    precision: 0.941361586069443
+    recall: 0.9198441984419844
+    f1: 0.9304785110684846
+  Target Metrics:
+    acc: 0.859894197387998
+    precision: 0.9344795539033457
+    recall: 0.9103666817564509
+    f1: 0.9222655354276542
+Epoch 13:
+  Loss: 292.066890
+  Source Metrics:
+    acc: 0.8914296694850116
+    precision: 0.9403716561159894
+    recall: 0.9440344403444034
+    f1: 0.9421994884910485
+  Target Metrics:
+    acc: 0.8779137047445859
+    precision: 0.9312240850910402
+    recall: 0.9353553644182888
+    f1: 0.9332851528976014
+Epoch 14:
+  Loss: 270.702533
+  Source Metrics:
+    acc: 0.8858570330514989
+    precision: 0.9423791821561338
+    recall: 0.9354243542435424
+    f1: 0.9388888888888889
+  Target Metrics:
+    acc: 0.8730368655976194
+    precision: 0.9329751388762407
+    recall: 0.9275690357627886
+    f1: 0.9302642331789702
+Epoch 15:
+  Loss: 253.221384
+  Source Metrics:
+    acc: 0.8868178324365873
+    precision: 0.9414368052696583
+    recall: 0.9375768757687577
+    f1: 0.9395028759244044
+  Target Metrics:
+    acc: 0.8791535791039842
+    precision: 0.9331886809510894
+    recall: 0.9345405160706202
+    f1: 0.933864109291595
+Epoch 16:
+  Loss: 238.776562
+  Source Metrics:
+    acc: 0.9000768639508071
+    precision: 0.940558026688233
+    recall: 0.9536695366953669
+    f1: 0.9470684039087949
+  Target Metrics:
+    acc: 0.887088775004133
+    precision: 0.9318283215847238
+    recall: 0.9454956994114985
+    f1: 0.9386122595721733
+Epoch 17:
+  Loss: 224.511958
+  Source Metrics:
+    acc: 0.8925826287471176
+    precision: 0.9412545974662853
+    recall: 0.9443419434194342
+    f1: 0.9427957429390095
+  Target Metrics:
+    acc: 0.8871714332947594
+    precision: 0.9305283757338552
+    recall: 0.9471253961068357
+    f1: 0.9387535334499932
+Epoch 18:
+  Loss: 210.793543
+  Source Metrics:
+    acc: 0.8854727132974635
+    precision: 0.9419900908340215
+    recall: 0.9354243542435424
+    f1: 0.9386957416169512
+  Target Metrics:
+    acc: 0.8821292775665399
+    precision: 0.9336398881976378
+    recall: 0.9375282933454051
+    f1: 0.9355800505963138
+Epoch 19:
+  Loss: 200.674051
+  Source Metrics:
+    acc: 0.8923904688700999
+    precision: 0.9416035999181837
+    recall: 0.9437269372693727
+    f1: 0.9426640728985358
+  Target Metrics:
+    acc: 0.8859315589353612
+    precision: 0.9315888184335089
+    recall: 0.9444092349479403
+    f1: 0.9379552198543297
+Epoch 20:
+  Loss: 191.113680
+  Source Metrics:
+    acc: 0.8866256725595696
+    precision: 0.9417885843807954
+    recall: 0.9369618696186962
+    f1: 0.9393690268214984
+  Target Metrics:
+    acc: 0.8843610514134568
+    precision: 0.932168458781362
+    recall: 0.9418741511996378
+    f1: 0.9369961720333259

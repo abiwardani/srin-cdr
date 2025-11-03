@@ -21,15 +21,13 @@ class CMF(nn.Module):
         super().__init__()
         self.user_emb = nn.Embedding(n_users, embedding_dim)
         self.item_emb = nn.Embedding(n_items, embedding_dim)
-        self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
 
         self._reset_parameters()
 
     def get_model_info(self):
         return {
             "model_type": "CMF",
-            "loss_type": "BCE",
+            "loss_type": "MSE",
             "n_users": self.user_emb.num_embeddings,
             "n_items": self.item_emb.num_embeddings,
             "embedding_dim": self.user_emb.embedding_dim,
@@ -40,20 +38,19 @@ class CMF(nn.Module):
         nn.init.normal_(self.item_emb.weight, 0, 0.1)
 
     def predict(self, users: torch.LongTensor, items: torch.LongTensor):
+        """
+        Predict ratings for a batch given domain.
+        domain: "source" or "target"
+        """
         user_embedding = self.user_emb(users)
         item_embedding = self.item_emb(items)
 
-        return self.sigmoid(torch.mul(user_embedding, item_embedding).sum(dim=-1)) # shape (batch,)
+        dot = torch.mul(user_embedding, item_embedding).sum(dim=-1)
+        return dot # shape (batch,)
 
     def forward(self, users: torch.LongTensor, items: torch.LongTensor):
         return self.predict(users, items)
     
-    def calculate_loss(self, users: torch.LongTensor, items: torch.LongTensor, clicks: torch.FloatTensor):
-        preds = self.forward(users, items)
-        loss = self.loss(preds, clicks)
-
-        return loss
-
     def __str__(self):
         info = self.get_model_info()
 
@@ -65,8 +62,10 @@ class CMFTrainer():
 
     def train(
         self,
-        source_loader: DataLoader,
-        target_loader: DataLoader,
+        train_source_loader: DataLoader,
+        train_target_loader: DataLoader,
+        valid_source_loader: DataLoader,
+        valid_target_loader: DataLoader,
         epochs: int = 10,
         lr: float = 1e-3,
         alpha: float = 0.2,
@@ -79,10 +78,12 @@ class CMFTrainer():
         model = self.model
         self.epochs = epochs
         self.learning_rate = lr
-        self.alpha = alpha
         self.weight_decay = weight_decay
 
+        self.scores = []
+
         optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        criterion = nn.MSELoss()
 
         for ep in range(1, epochs + 1):
             model.train()
@@ -90,12 +91,13 @@ class CMFTrainer():
             n_batches = 0
 
             # Train on source domain
-            for users, items, _, clicks in source_loader:
+            for users, items, ratings, _ in train_source_loader:
                 users = users.long()
                 items = items.long()
-                clicks = clicks.float()
+                ratings = ratings.float()
 
-                loss = alpha * model.calculate_loss(users, items, clicks)
+                preds = model(users, items)
+                loss = alpha * criterion(preds, ratings)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -104,12 +106,13 @@ class CMFTrainer():
                 n_batches += 1
 
             # Train on target domain
-            for users, items, _, clicks in target_loader:
+            for users, items, ratings, _ in train_target_loader:
                 users = users.long()
                 items = items.long()
-                clicks = clicks.float()
+                ratings = ratings.float()
 
-                loss = (1 - alpha) * model.calculate_loss(users, items, clicks)
+                preds = model(users, items)
+                loss = (1 - alpha) * criterion(preds, ratings)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -118,46 +121,63 @@ class CMFTrainer():
                 n_batches += 1
 
             if ep % report_every == 0:
-                avg_bce = total_loss / max(1, n_batches)
-                print(f"Epoch {ep}/{epochs} — BCE: {total_loss:.6f} | avg BCE: {avg_bce:.6f}")
+                avg_loss = total_loss / max(1, n_batches)
+                print(f"Epoch {ep}/{epochs} — avg MSE: {avg_loss:.6f}")
+
+            # Validation step
+            if valid_source_loader is not None and valid_target_loader is not None:
+                for users, items, ratings, _ in valid_source_loader:
+                    users = users.long()
+                    items = items.long()
+                    ratings = ratings.float()
+
+                    source_metrics = self.calculate_metrics(users, items, ratings)
+                    break
+                
+                for users, items, ratings, _ in valid_target_loader:
+                    users = users.long()
+                    items = items.long()
+                    ratings = ratings.float()
+
+                    target_metrics = self.calculate_metrics(users, items, ratings)
+                    break
+                
+                self.scores.append((avg_loss, source_metrics, target_metrics))
 
         return model
 
 
     def evaluate(self, loader: DataLoader):
         """
-        Return BCE Loss on provided loader.
+        Return RMSE on provided loader (domain indicates which item embeddings to use).
         """
         model = self.model
         model.eval()
-        total_loss = 0.0
+        se = 0.0
         n = 0
-
         with torch.no_grad():
-            for users, items, _, clicks in loader:
+            for users, items, ratings, _ in loader:
                 users = users.long()
                 items = items.long()
-                clicks = clicks.float()
+                ratings = ratings.float()
+                preds = model(users, items)
+                se += ((preds - ratings) ** 2).sum().item()
+                n += ratings.numel()
+        rmse = math.sqrt(se / n) if n > 0 else float("nan")
 
-                loss = model.calculate_loss(users, items, clicks)
-
-                total_loss += loss.item()
-                n += 1
-                
-        bce = math.sqrt(total_loss / n) if n > 0 else float("nan")
-
-        return bce
+        return rmse
     
-    def calculate_metrics(self, eval_dataset):
-        target_users = eval_dataset[0]
-        target_items = eval_dataset[1]
-        clicks = eval_dataset[3].numpy()
+    def calculate_metrics(self, users, items, ratings):
+        users = users.long()
+        items = items.long()
+        ratings = ratings.float()
 
-        preds = self.model.predict(target_users.long(), target_items.long())
-        bin_preds = preds.detach().numpy() >= 0.5
+        y_preds = self.model.predict(users.long(), items.long())
+        bin_preds = (y_preds >= 3).long().tolist()
+        bin_ratings = (ratings >= 3).long().tolist()
 
-        acc = accuracy_score(clicks, bin_preds)
-        conf = precision_recall_fscore_support(clicks, bin_preds, average='binary')
+        acc = accuracy_score(bin_ratings, bin_preds)
+        conf = precision_recall_fscore_support(bin_ratings, bin_preds, average='binary', zero_division=0.0)
 
         return {"acc": acc, "precision": conf[0], "recall": conf[1], "f1": conf[2]}
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-def log_train_results(data_lib, model, trainer, metrics, log_dir="./log"):
+def log_train_results(data_lib, model, trainer, metrics, log_dir="./log", report_scores=True):
     date = datetime.now().strftime("%b_%d_%Y_%H%M")
 
     source_name = data_lib["source_name"]
@@ -30,3 +30,16 @@ def log_train_results(data_lib, model, trainer, metrics, log_dir="./log"):
         f.write("Training Metrics:\n")
         for key, value in metrics.items():
             f.write(f"{key}: {value}\n")
+
+        if report_scores:
+            f.write("\n\n\n")
+            f.write("Training Scores per Epoch:\n")
+            for epoch, (loss, metrics_source, metrics_target) in enumerate(trainer.scores):
+                f.write(f"Epoch {epoch + 1}:\n")
+                f.write(f"  Loss: {loss:.6f}\n")
+                f.write("  Source Metrics:\n")
+                for key, value in metrics_source.items():
+                    f.write(f"    {key}: {value}\n")
+                f.write("  Target Metrics:\n")
+                for key, value in metrics_target.items():
+                    f.write(f"    {key}: {value}\n")
