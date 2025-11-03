@@ -10,20 +10,19 @@ Number of Target Interactions: 120985
 
 Model Info:
 model_type: CMF
+loss_type: BCE
 n_users: 3859
-n_items_source: 4883
-n_items_target: 4929
+n_items: 9812
 embedding_dim: 64
 
 Trainer Info:
-epochs: 20
+epochs: 1
 learning_rate: 0.001
 weight_decay: 1e-05
 
 Training Metrics:
-acc: 0.9610612885894946
-precision: 0.9985529314959661
-recall: 0.9586148035156534
-f1: 0.9781763771210977
-rmse_source: 0.2976817791399764
-rmse_target: 0.2806849692836636
+acc: 0.6722651568376244
+precision: 0.953577266116681
+recall: 0.6727318951114986
+f1: 0.7889051561210637
+BCE: 0.8323334979206547

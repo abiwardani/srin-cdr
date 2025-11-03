@@ -10,7 +10,7 @@ def log_train_results(data_lib, model, trainer, metrics, log_dir="./log"):
     n_target_items = data_lib["n_target_items"]
     n_source_interactions = len(data_lib["source_interactions"])
     n_target_interactions = len(data_lib["target_interactions"])
-    model_type = model.get_model_info()["model_type"]
+    model_type = model.get_model_info().get("model_type")
 
     log_path = f"{log_dir}/{model_type}_{date}.log"
 

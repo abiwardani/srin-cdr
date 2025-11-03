@@ -34,11 +34,15 @@ The notebook [`data_engineering.ipynb`](dataset/data_engineering.ipynb) document
 
 ## Results
 
-Best CMF score is f1: 0.9782, source RMSE: 0.2978 and target RMSE: 0.2807
-Best NCF score is f1: 0.9776, source-oriented RMSE: 0.5092, and target-oriented RMSE: 0.5659
+Best CMF score is f1: 0.9654, precision: 0.9365 and target-dataset BCE: 0.5062
+Best NCF score is f1: 0.9582, precision: 0.9274, and target-dataset MSE: 0.8832
 
 ## Acknowledgement
 
+The datasets are obtained from [Amazon-Books](https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Amazon_ratings/Amazon_Books.zip) and [Amazon-Movies-TV](https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Amazon_ratings/Amazon_Movies_and_TV.zip).
+
 The data structuring of this project is based on the open-source recommendation library [RecBole](https://github.com/RUCAIBox/RecBole).
 
-CMF is based on 
+The implementation of CMF is based on [RecBole-CDR](https://github.com/RUCAIBox/RecBole-CDR) which is based on the work of Singh and Gordon: [Relational Learning via Collective Matrix Factorization](https://dl.acm.org/doi/10.1145/1401890.1401969) (SIGKDD 2008).
+
+The implementation of NCF is based on [DDRCDR](https://github.com/lpworld/DDTCDR), which is an implementation of the work of Li and Tuzhilin [DDTCDR: Deep Dual Transfer Cross Domain Recommendation](https://dl.acm.org/doi/abs/10.1145/3336191.3371793), a transfer learning modification of the original NCF framework proposed in [Neural Collaborative Filtering.](http://dl.acm.org/citation.cfm?id=3052569).

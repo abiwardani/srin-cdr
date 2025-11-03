@@ -9,23 +9,20 @@ Number of Source Interactions: 104080
 Number of Target Interactions: 120985
 
 Model Info:
-model_type: NCF
+model_type: CMF
+loss_type: BCE
 n_users: 3859
-user_embedding_dim: 64
-source_feat_dim: 96
-target_feat_dim: 96
-source_mlp_layers: [128, 64, 32, 1]
-target_mlp_layers: [128, 64, 32, 1]
+n_items: 9812
+embedding_dim: 64
 
 Trainer Info:
-epochs: 50
+epochs: 20
 learning_rate: 0.001
 weight_decay: 1e-05
 
 Training Metrics:
-acc: 0.9593585981733272
-precision: 0.9789866618108982
-recall: 0.9763111062686134
-f1: 0.9776470534752308
-rmse_source: 0.5092069851853867
-rmse_target: 0.5658835782650092
+acc: 0.9350745960243005
+precision: 0.9365796190850186
+recall: 0.9961320549139246
+f1: 0.9654383456165438
+BCE: 0.5062105525997745

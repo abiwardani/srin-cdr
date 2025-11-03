@@ -55,11 +55,14 @@ class NCF(nn.Module):
         # reuse architecture for target but with target input dim
         self.target_mlp = build_mlp(input_dim_tgt)
 
+        self.loss = nn.MSELoss()
+
         self._reset_parameters()
     
     def get_model_info(self):
         return {
             "model_type": "NCF",
+            "loss_type": "MSE",
             "n_users": self.user_embedding.num_embeddings,
             "user_embedding_dim": self.user_embedding.embedding_dim,
             "source_feat_dim": self.source_feat_dim,
@@ -106,6 +109,12 @@ class NCF(nn.Module):
         
         return out
     
+    def calculate_loss(self, users: torch.LongTensor, items: torch.LongTensor, ratings: torch.FloatTensor, domain: str):
+        preds = self.forward(users, items, domain)
+        loss = self.loss(preds, ratings)
+
+        return loss
+    
     def __str__(self):
         info = self.get_model_info()
 
@@ -121,6 +130,7 @@ class NCFTrainer():
             target_loader,
             epochs: int = 10,
             lr: float = 1e-3,
+            alpha: float = None,
             weight_decay: float = 0.0,
             report_every: int = 1,
         ):
@@ -134,62 +144,64 @@ class NCFTrainer():
 
         for ep in range(1, epochs + 1):
             model.train()
-            total_loss = 0.0
-            n_batches = 0
+            total_source_loss = 0.0
+            total_target_loss = 0.0
+            n_source_batches = 0
+            n_target_batches = 0
 
-            for users, items, ratings in source_loader:
+            for users, items, ratings, _ in source_loader:
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
 
-                preds = model(users, items, domain="source")
-                loss = loss_fn(preds, ratings)
+                loss = model.calculate_loss(users, items, ratings, domain="source")
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
 
-                total_loss += loss.item()
-                n_batches += 1
+                total_source_loss += loss.item()
+                n_source_batches += 1
 
-            for users, items, ratings in target_loader:
+            for users, items, ratings, _ in target_loader:
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
 
-                preds = model(users, items, domain="target")
-                loss = loss_fn(preds, ratings)
+                loss = model.calculate_loss(users, items, ratings, domain="target")
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
 
-                total_loss += loss.item()
-                n_batches += 1
+                total_target_loss += loss.item()
+                n_target_batches += 1
 
             if ep % report_every == 0:
-                print(f"Epoch {ep}/{epochs} avg MSE: {total_loss / max(1, n_batches):.6f}")
+                print(f"Epoch {ep}/{epochs} source MSE: {total_source_loss / max(1, n_source_batches):.6f} | target MSE: {total_target_loss / max(1, n_target_batches):.6f}")
 
         return model
 
-    def evaluate(self, loader, domain: str):
+    def evaluate(self, loader, domain="target"):
         model = self.model
         model.eval()
-        se = 0.0
+        mse = 0.0
         n = 0
         with torch.no_grad():
-            for users, items, ratings in loader:
+            for users, items, ratings, _ in loader:
                 users = users.long()
                 items = items.long()
                 ratings = ratings.float()
-                preds = model(users, items, domain=domain)
-                se += ((preds - ratings) ** 2).sum().item()
+                mse += model.calculate_loss(users, items, ratings, domain=domain).item() * ratings.numel()
                 n += ratings.numel()
-        rmse = math.sqrt(se / n) if n > 0 else float("nan")
-        return rmse
+        return mse / max(1, n)
     
-    def calculate_metrics(self, target_users, target_items, ratings):
-        y_preds = self.model.forward(target_users.long(), target_items.long(), 'target')
-        bin_preds = [1 if e >= 3 else 0 for e in y_preds]
-        bin_ratings = [1 if e >= 3 else 0 for e in ratings]
+    def calculate_metrics(self, eval_dataset):
+        target_users = eval_dataset[0]
+        target_items = eval_dataset[1]
+        ratings = eval_dataset[2].numpy()
+
+        preds = self.model.forward(target_users.long(), target_items.long(), 'target')
+        bin_preds = preds.detach().numpy() >= 3
+        bin_ratings = ratings >= 3
 
         acc = accuracy_score(bin_ratings, bin_preds)
         conf = precision_recall_fscore_support(bin_ratings, bin_preds, average='binary')

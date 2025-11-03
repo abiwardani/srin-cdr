@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from src.data.dataloader import *
 from src.model.cmf import CMF, CMFTrainer
@@ -27,6 +27,21 @@ if __name__ == "__main__":
         "--lr",
         type=float,
         default=1e-3,
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.2,
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=1024,
+    )
+    parser.add_argument(
+        "--layers",
+        type=str,
+        default="128,64,32,8",
     )
     parser.add_argument(
         "--data-folder-path",
@@ -56,6 +71,8 @@ if __name__ == "__main__":
 
     if args.model == "NCF":
         args.load_embeds = True
+    
+    args.layers = [int(x) for x in args.layers.split(",")]
 
     # Load data
     source_inter_filepath = f"{args.data_folder_path}/{args.source_name}/{args.source_name}.inter"
@@ -70,11 +87,18 @@ if __name__ == "__main__":
     n_users = data_lib["n_users"]
     n_source_items = data_lib["n_source_items"]
     n_target_items = data_lib["n_target_items"]
+    n_items = data_lib["n_items"]
     source_interactions = data_lib["source_interactions"]
     target_interactions = data_lib["target_interactions"]
+    train_source_interactions = data_lib["train_source_interactions"]
+    test_source_interactions = data_lib["test_source_interactions"]
+    train_target_interactions = data_lib["train_target_interactions"]
+    test_target_interactions = data_lib["test_target_interactions"]
 
-    source_loader = DataLoader(source_interactions, batch_size=256, shuffle=True)
-    target_loader = DataLoader(target_interactions, batch_size=256, shuffle=True)
+    train_source_loader = DataLoader(train_source_interactions, batch_size=args.batch_size, shuffle=True)
+    train_target_loader = DataLoader(train_target_interactions, batch_size=args.batch_size, shuffle=True)
+    test_source_loader = DataLoader(test_source_interactions, batch_size=args.batch_size, shuffle=False)
+    test_target_loader = DataLoader(test_target_interactions, batch_size=args.batch_size, shuffle=False)
 
     if args.load_embeds:
         source_embed_filepath = f"{args.data_folder_path}/{args.source_name}/{args.source_name}.embed"
@@ -95,8 +119,7 @@ if __name__ == "__main__":
     if args.model == "CMF":
         model = CMF(
             n_users=n_users,
-            n_items_source=n_source_items,
-            n_items_target=n_target_items,
+            n_items=n_items,
             embedding_dim=64,
         )
         trainer = CMFTrainer(model)
@@ -106,35 +129,32 @@ if __name__ == "__main__":
             source_item_features=source_item_features,
             target_item_features=target_item_features,
             user_embedding_dim=64,
-            mlp_layers=(128,64,32),
+            mlp_layers=args.layers,
             dropout=0.2,
             freeze_item_features=True,
         )
         trainer = NCFTrainer(model)
 
     trainer.train(
-        source_loader,
-        target_loader,
+        train_source_loader,
+        train_target_loader,
         epochs=args.epochs,
         lr=args.lr,
+        alpha=args.alpha,
         weight_decay=1e-5,
         report_every=1,
     )
 
-    rmse_source = trainer.evaluate(source_loader, domain="source")
-    rmse_target = trainer.evaluate(target_loader, domain="target")
+    model_loss_type = model.get_model_info().get("loss_type")
+    test_target_dataset = Subset(target_interactions, test_target_loader.dataset.indices).dataset.tensors
 
-    target_metrics = trainer.calculate_metrics(
-        target_loader.dataset.tensors[0],   # target users
-        target_loader.dataset.tensors[1],   # target items
-        target_loader.dataset.tensors[2],   # target ratings
-    )
+    target_loss = trainer.evaluate(test_target_loader)
+    target_metrics = trainer.calculate_metrics(test_target_dataset)
 
-    target_metrics["rmse_source"] = rmse_source
-    target_metrics["rmse_target"] = rmse_target
+    target_metrics[f"{model_loss_type}"] = target_loss
     
     print(f"\n{args.model} Results:")
-    print(f"Source RMSE: {rmse_source:.4f}, Target RMSE: {rmse_target:.4f}")
+    print(f"Target {model_loss_type}: {target_loss:.4f}")
     print("Target Accuracy: {:.4f}, Target Precision: {:.4f}, Target Recall: {:.4f}, Target F1: {:.4f}".format(
         target_metrics["acc"], target_metrics["precision"], target_metrics["recall"], target_metrics["f1"]))
 
